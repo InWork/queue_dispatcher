@@ -1,0 +1,6 @@
+jQuery('#events').append('<%= j render(partial: "queue_dispatcher_views/search_results_my_events") %>');
+<% if @tasks.next_page %>
+jQuery('.pagination').replaceWith('<%= j will_paginate(@tasks) %>');
+<% else %>
+jQuery('.pagination').remove();
+<% end %>

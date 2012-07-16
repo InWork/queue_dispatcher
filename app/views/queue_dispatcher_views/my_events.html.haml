@@ -1,0 +1,7 @@
+- title "Tasks and Events"
+= periodically_call_remote :url => {:action => 'my_events'},
+                           :frequency => 5,
+                           :condition => 'running_task_queues'
+= render :partial => 'queue_dispatcher_views/search_results_my_events'
+%br/
+= will_paginate @tasks

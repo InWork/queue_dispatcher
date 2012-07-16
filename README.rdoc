@@ -1,0 +1,55 @@
+= QueueDispatcher for Rails3
+
+This Rails3 Gem implements a method to perform long running methods in the background.
+Background tasks will be executed by persistent workers.
+
+== Install
+
+Inside your Gemfile:
+
+  gem "queue_dispatcher"
+
+and then run:
+
+* bundle install
+* rake queue_dispatcher:sync
+
+=== Gem Dependencies
+
+Please check if all those requirements are satisfied on your environment.
+
+* rails >= 3.0.0
+* sys-proctable >= 0.9.1
+
+
+== Inside your application
+
+To enqueue a long running task, simple call a method through enque:
+E.g.: 
+  Assume, you have a long running job:
+  LongRunningMailJob.send_mail
+
+  Now we'd like to execute it in the background by simply calling: 
+  task = LongRunningMailJob.enqueue.send_mail
+
+  If you like to put the job in a queue, you can do this by execute it the following way:
+  task = LongRunningMailJob.enqueue(queue: 'queue_name').send_mail
+
+  Jobs inside a queue are executed serialized, not in parallel. You can define dependencies. A task is then executed only after all dependent tasks are finished. Code to add Task dependencies:
+  task.dependent_tasks = another_task
+
+== Generators
+
+* rails generate queue_dispatcher:migration
+
+=== Database Setup
+
+Use
+
+  rails g queue_dispatcher:migration
+
+This will create a database migration for the models Task and TaskQueues.
+
+== Copyright
+
+Copyright (c) 2011 - 2012 Philip Kurmann. See LICENSE for details.

@@ -1,0 +1,15 @@
+<% @new_tasks.each do |task| %>
+  jQuery('#events_table').prepend('<%=j render(partial: 'queue_dispatcher_views/task_event', locals: {task: task}) %>');
+  jQuery('#task_<%= task.id %>').effect('highlight');
+<% end %>
+
+<% @updated_tasks.each do |task| %>
+  jQuery('#task_<%= task.id %>').replaceWith('<%=j render(partial: 'queue_dispatcher_views/task_event', locals: {task: task}) %>');
+  jQuery('#task_<%= task.id %>').effect('highlight');
+<% end %>
+
+<% @deleted_task_ids.each do |id| %>
+  jQuery('#task_<%= id %>).fadeOut();
+<% end %>
+
+<%= update_flash %>

@@ -1,0 +1,24 @@
+- if task.error_msg.blank?
+  - event_class = "event"
+  - event_onclick = ""
+- else
+  - event_class = "event pointer"
+  - event_onclick = onclick_to_remote :url => {:action => 'expand_event'}, :with => "'id=#{task.id}'"
+
+- if @expanded_events.include? task.id
+  - event_style = ""
+- else
+  - event_style = "display:none"
+
+%tr{:id => "task_#{task.id}", :class => event_class, :onclick => event_onclick }
+  %td.qd_icon
+    = icon_for_task task
+    = task.perc_finished if task.running?
+  %td.qd_date= task.updated_at.to_s :history
+  %td.qd_prosa
+    = task.prosa
+    - unless task.error_msg.blank?
+      = image_tag 'icon_expand.gif' 
+      %div{:id => "task_#{task.id}_details", :class => 'qd_error_msg', :style => event_style}
+        = task.error_msg
+        %br

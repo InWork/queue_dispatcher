@@ -1,0 +1,259 @@
+#!/usr/bin/env ruby
+# BEGIN - rails runner… with a relative path
+DAEMON_ARGV = ARGV.clone
+ARGV.clear
+ARGV << 'runner'
+ARGV << '/dev/null'
+$: << File.dirname(__FILE__)
+load 'rails'
+# END - rails runner… with a relative path
+
+require 'sys/proctable'
+include Sys
+include Spawn
+include IwLogger
+
+
+# Stop Active Record Logging
+ActiveRecord::Base.logger = Logger.new(nil)
+ActiveRecord::Base.clear_active_connections!
+
+# ---------------------------------------------------------------------
+# CONFIGURATION
+# ---------------------------------------------------------------------
+$daemon = {
+  :name => "--- - Worker Dispatcher",                                                  # daemon name
+  :process_prefix => "---",                                                            # Prefix for process name
+  :copyright => "(c) 2011 In&Work AG",                                                 # daemon copyright
+  :author => "Philip Kurmann",                                                         # dameon author
+  :version => "1.0",                                                                   # actual version
+  :log_file => "#{File.expand_path(Rails.root)}/log/queue_dispatcher.log",             # log path
+  :pid_file => "#{File.expand_path(Rails.root)}/tmp/pids/queue_worker_dispatcher.pid", # process id path
+  :task_queue_model => TaskQueue,                                                      # TaskQueue
+  :monitoring_sleep => 30,                                                             # seconds
+  :worker_sleep => 15,                                                                 # seconds
+  :worker_count => AppConfig.max_task_queue_workers,                                   # Worker_count
+  :background => false,                                                                # background mode
+  :work => true,                                                                       # daemon work flag
+  :logger_msg_prefix => nil,                                                           # Prefix for logging
+  :worker_pids => []                                                                   # Remember PIDs
+}
+
+$worker = {
+  :name => "--- - Queue Worker",                                                       # Worker name
+  :process_prefix => "---",                                                            # Prefix for process name
+  :work => true,                                                                       # Worker work flag
+  :task_queue => nil                                                                   # Remember TaskQueue of worker, nil means idle
+}
+
+
+# Write a log message
+def daemon_log args = {}
+  msg = args[:msg]
+  msg = "#{$daemon[:logger_msg_prefix]}: #{msg}" unless $daemon[:logger_msg_prefix].blank?
+  sev = args[:sev] || :info
+  log :msg => msg, :sev => sev, :print_log => (! $daemon[:background] || sev == :error)
+end
+
+
+# Set process name
+def daemon_set_process_name name
+  $0 = name
+end
+
+
+# Write PID-File
+def daemon_write_pid_file
+  begin
+    File.open($daemon[:pid_file], "w") { |f| f.write(Process.pid) }
+  rescue Errno::EACCES
+    daemon_log :msg => "Cannot create PID file!", :sev => :error
+    exit
+  end
+end
+
+
+# Clean up before a daemon terminates
+def daemon_clean_up
+  File.delete($daemon[:pid_file])
+end
+
+
+# Install signal handler
+def install_signal_handler signals, args = {}
+  sigtrap = proc do
+    daemon_log :msg => args[:trap_msg] if args[:trap_msg]
+    yield
+  end
+  signals.each { |signal| trap signal, sigtrap }
+  args[:ignore_signals].each { |signal| trap signal, 'IGNORE' } if args[:ignore_signals]
+end
+
+
+# Install signal handler for daemon
+def daemon_install_signal_handler
+  install_signal_handler(['TERM', 'INT', 'HUP'], :trap_msg => "Caught trap signal. Shutdown workers...") do
+    $daemon[:worker_pids].each do |pid|
+      begin
+        Process.kill('TERM', pid)
+      rescue => exception
+      end
+    end
+    $daemon[:work] = false
+  end
+end
+
+
+# Install signal handler for worker
+def worker_install_signal_handler
+  install_signal_handler(['TERM'], :trap_msg => "Caught trap signal. Shutdown...", :ignore_signals => ['HUP', 'INT']) do
+    # Shutdown task_queue
+    $worker[:task_queue].update_attributes :state => 'shutdown' if $worker[:task_queue]
+    $worker[:work] = false
+  end
+end
+
+
+def daemon_runner
+  Lock.release_all
+  daemon_set_process_name "#{$daemon[:process_prefix]}_WorkerDispatcher"
+  daemon_write_pid_file
+  daemon_install_signal_handler
+  spawn_and_monitor_workers
+  # Wait for all children (workers) to be finished
+  Process.waitall
+  daemon_clean_up
+end
+
+
+# Start running
+def daemon_start
+  @logger = Logger.new($daemon[:log_file], 'weekly')
+  $daemon[:logger_msg_prefix] = 'TaskQueueDispatcher'
+
+  if File.exist?($daemon[:pid_file]) then
+    old_pid = IO.read($daemon[:pid_file]).to_i rescue nil
+    ps = Sys::ProcTable.ps(old_pid)
+
+    # Asume, that if the command of the 'ps'-output is 'ruby', the process is still running
+    if ps && (ps.comm == 'ruby')
+      daemon_log :msg => "Process already running!", :sev => :error
+      exit
+    else
+      File.delete($daemon[:pid_file])
+    end
+  end
+ 
+  daemon_log :msg => "Starting process..."
+  if $daemon[:background]
+    spawn_block { daemon_runner }
+  else
+    daemon_runner
+  end
+end
+
+
+# Start an amount of workers
+def spawn_and_monitor_workers
+  daemon_log :msg => "Spawning #{$daemon[:worker_count]} workers..."
+
+  while $daemon[:work]
+    # (Re)start workers
+    while $daemon[:worker_pids].count < $daemon[:worker_count] do
+      sp = spawn_block(:argv => $worker[:process_prefix]) do
+        worker_runner
+      end
+      $daemon[:worker_pids] << sp.handle
+    end
+
+    sleep $daemon[:monitoring_sleep]
+
+    # Delete PIDs from the array child_pids which don't exists anymore
+    $daemon[:worker_pids].each do |ch_pid|
+      begin
+        ps = ProcTable.ps(ch_pid)
+      rescue
+        ps = nil
+        daemon_log :msg => "Error in ProcTable.ps: #{$!}", :sev => :error
+      end
+      $daemon[:worker_pids].delete ch_pid unless ps && ps.comm == 'ruby'
+    end
+  end
+end
+
+
+# Start the task_list dispatcher, which is permanentely looking for task_lists to start
+def worker_runner
+  $daemon[:logger_msg_prefix] = 'TaskQueueWorker'
+
+  worker_install_signal_handler
+  daemon_log :msg => "Start working..."
+
+  # Fetch pending task queues and start working
+  while $worker[:work] do
+    $worker[:task_queue] = $daemon[:task_queue_model].get_next_pending
+
+    if $worker[:task_queue]
+      # Set Process Name and execute tasks
+      $0 = "#{$worker[:process_prefix]}_#{$worker[:task_queue].id}"
+      $worker[:task_queue].run!(:print_log => ! $daemon[:background])
+    else
+      # Set Process Name and sleep
+      $0 = "#{$worker[:process_prefix]}_idle"
+      sleep 15
+    end
+  end
+
+  daemon_log :msg => "Ended!"
+rescue => exception
+  daemon_log :msg => "Fatal error in method 'worker_runner': #{$!}\n#{exception.backtrace}", :sev => :error
+end
+
+
+# Show version
+def daemon_show_version
+  puts "#{$daemon[:name]} v#{$daemon[:version]}"
+  puts $daemon[:copyright]
+end
+
+
+# Show help on command line
+def daemon_show_usage
+  daemon_show_version
+  puts "\nUsage:"
+  puts "    -b, --background        work in background mode"
+  puts "    -v, --version           view version of daemon"
+  puts "    -h, --help              view this help"
+end
+
+
+# Parse command line options 
+def daemon_parse_opts
+  start = true
+
+  unless DAEMON_ARGV.length == 0 
+    case DAEMON_ARGV[0]
+      when '-b', '--background'
+        $daemon[:background] = true;
+   
+      when '-v', '--version'
+        daemon_show_version
+        start = false
+   
+      when '-h', '--help'
+        daemon_show_usage
+        start = false
+   
+      else
+        puts "Invalid argument: #{DAEMON_ARGV[0]}" if !DAEMON_ARGV[0].nil?
+        daemon_show_usage
+        start = false
+    end
+  end
+ 
+  start
+end
+
+
+################# MAIN #####################
+daemon_start if daemon_parse_opts
