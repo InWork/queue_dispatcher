@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.email       = ["philip.kurmann@inwork.ch"]
   s.homepage    = ""
   s.summary     = %q{This Gem installs a queue dispatcher for handling asynchronous tasks}
-  s.description = %q{The QueueDispatcher let you execute queues as workers.}
+  s.description = %q{Queue_Dispatcher executes asynchronous tasks in the background.}
 
   s.add_dependency "sys-proctable", '>= 0.9.1'
   s.add_dependency "deadlock_retry"
