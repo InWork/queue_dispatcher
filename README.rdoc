@@ -11,8 +11,8 @@ Inside your Gemfile:
 
 and then run:
 
-* bundle install
-* rake queue_dispatcher:sync
+  bundle install
+  rake queue_dispatcher:sync
 
 === Gem Dependencies
 
@@ -24,18 +24,18 @@ Please check if all those requirements are satisfied on your environment.
 
 == Inside your application
 
-To enqueue a long running task, simple call a method through enque:
+To enqueue a long running task, simple call a method through enque.
 E.g.: 
-  Assume, you have a long running job:
+Assume, you have a long running job:
   LongRunningMailJob.send_mail
 
-  Now we'd like to execute it in the background by simply calling: 
+Now we'd like to execute it in the background by simply calling: 
   task = LongRunningMailJob.enqueue.send_mail
 
-  If you like to put the job in a queue, you can do this by execute it the following way:
+If you like to put the job in a queue, you can do this by execute it the following way:
   task = LongRunningMailJob.enqueue(queue: 'queue_name').send_mail
 
-  Jobs inside a queue are executed serialized, not in parallel. You can define dependencies. A task is then executed only after all dependent tasks are finished. Code to add Task dependencies:
+Jobs inside a queue are executed serialized, not in parallel. You can define dependencies. A task is then executed only after all dependent tasks are finished. Code to add Task dependencies:
   task.dependent_tasks = another_task
 
 == Generators
@@ -45,7 +45,6 @@ E.g.:
 === Database Setup
 
 Use
-
   rails g queue_dispatcher:migration
 
 This will create a database migration for the models Task and TaskQueues.
