@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Queue dispatcher : Queue_Dispatcher executes asynchronous tasks in the background." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Queue dispatcher</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/InWork/queue_dispatcher">View on GitHub</a>
+
+          <h1 id="project_title">Queue dispatcher</h1>
+          <h2 id="project_tagline">Queue_Dispatcher executes asynchronous tasks in the background.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/InWork/queue_dispatcher/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/InWork/queue_dispatcher/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>QueueDispatcher for Rails3</h1>
+
+<p>This Rails3 Gem implements a method to perform long running methods in the background.
+Background tasks will be executed by persistent workers.</p>
+
+<h2>Install</h2>
+
+<p>Inside your Gemfile:</p>
+
+<p><code>gem "queue_dispatcher"</code></p>
+
+<p>and then run:</p>
+
+<p><code>bundle install</code></p>
+
+<p>To install the queue_worker_dispatcher script, which starts all workers, execute the following rake command:</p>
+
+<p><code>rake queue_dispatcher:sync</code></p>
+
+<h3>Database Setup</h3>
+
+<p>Use</p>
+
+<p><code>rails g queue_dispatcher:migration</code></p>
+
+<p>This will create a database migration for the models Task and TaskQueues.</p>
+
+<h3>Gem Dependencies</h3>
+
+<p>Please check if all those requirements are satisfied on your environment.</p>
+
+<ul>
+<li>rails &gt;= 3.0.0</li>
+<li>sys-proctable &gt;= 0.9.1</li>
+</ul><h2>Inside your application</h2>
+
+<p>To enqueue a long running task, simple call a method through enque.
+E.g.: 
+Assume, you have a long running job:</p>
+
+<p><code>LongRunningMailJob.send_mail</code></p>
+
+<p>Now we'd like to execute it in the background by simply calling: </p>
+
+<p><code>task = LongRunningMailJob.enqueue.send_mail</code></p>
+
+<p>If you like to put the job in a queue, you can do this by execute it the following way:</p>
+
+<p><code>task = LongRunningMailJob.enqueue(queue: 'queue_name').send_mail</code></p>
+
+<p>Jobs inside a queue are executed serialized, not in parallel. You can define dependencies. A task is then executed only after all dependent tasks are finished. The dependencies could also be in another queue. This way you could ensure, that a task is only executed when another task from another queue is successfully finished. Code to add Task dependencies:</p>
+
+<p><code>task.dependent_tasks = another_task</code></p>
+
+<h3>Queue Worker Dispatcher</h3>
+
+<p>The QueueWorkerDispatcher-script starts the workers (default are 10 workers). A worker waits for a new queue and executes all tasks of this queue. Start the QueueWorkerDispatcher by executing the following command:</p>
+
+<p><code>script/queue_worker_dispatcher</code></p>
+
+<p>To start the QueueWorkerDispatcher as a daemon, use the option -b.</p>
+
+<p><code>-b, --background        work in background mode</code></p>
+
+<h2>Copyright</h2>
+
+<p>Copyright (c) 2011-2012 Philip Kurmann. See LICENSE for details.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Queue dispatcher maintained by <a href="https://github.com/InWork">InWork</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
