@@ -6,13 +6,20 @@ Background tasks will be executed by persistent workers.
 == Install
 
 Inside your Gemfile:
-
   gem "queue_dispatcher"
 
 and then run:
-
   bundle install
+
+To install the queue_worker_dispatcher script, which starts all workers, execute the following rake command:
   rake queue_dispatcher:sync
+
+=== Database Setup
+
+Use
+  rails g queue_dispatcher:migration
+
+This will create a database migration for the models Task and TaskQueues.
 
 === Gem Dependencies
 
@@ -35,19 +42,15 @@ Now we'd like to execute it in the background by simply calling:
 If you like to put the job in a queue, you can do this by execute it the following way:
   task = LongRunningMailJob.enqueue(queue: 'queue_name').send_mail
 
-Jobs inside a queue are executed serialized, not in parallel. You can define dependencies. A task is then executed only after all dependent tasks are finished. Code to add Task dependencies:
+Jobs inside a queue are executed serialized, not in parallel. You can define dependencies. A task is then executed only after all dependent tasks are finished. The dependencies could also be in another queue. This way you could ensure, that a task is only executed when another task from another queue is successfully finished. Code to add Task dependencies:
   task.dependent_tasks = another_task
 
-== Generators
+=== Queue Worker Dispatcher
+The QueueWorkerDispatcher-script starts the workers (default are 10 workers). A worker waits for a new queue and executes all tasks of this queue. Start the QueueWorkerDispatcher by executing the following command:
+  script/queue_worker_dispatcher
 
-* rails generate queue_dispatcher:migration
-
-=== Database Setup
-
-Use
-  rails g queue_dispatcher:migration
-
-This will create a database migration for the models Task and TaskQueues.
+To start the QueueWorkerDispatcher as a daemon, use the option -b.
+  -b, --background        work in background mode
 
 == Copyright
 
