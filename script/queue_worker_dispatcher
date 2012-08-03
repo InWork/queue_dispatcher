@@ -22,9 +22,9 @@ ActiveRecord::Base.clear_active_connections!
 # CONFIGURATION
 # ---------------------------------------------------------------------
 $daemon = {
-  :name => "--- - Worker Dispatcher",                                                  # daemon name
-  :process_prefix => "---",                                                            # Prefix for process name
-  :copyright => "(c) 2011 In&Work AG",                                                 # daemon copyright
+  :name => "QueueDispatcher - Worker Dispatcher",                                      # daemon name
+  :process_prefix => "qdwd",                                                           # Prefix for process name
+  :copyright => "(c) 2012 In&Work AG",                                                 # daemon copyright
   :author => "Philip Kurmann",                                                         # dameon author
   :version => "1.0",                                                                   # actual version
   :log_file => "#{File.expand_path(Rails.root)}/log/queue_dispatcher.log",             # log path
@@ -32,7 +32,7 @@ $daemon = {
   :task_queue_model => TaskQueue,                                                      # TaskQueue
   :monitoring_sleep => 30,                                                             # seconds
   :worker_sleep => 15,                                                                 # seconds
-  :worker_count => AppConfig.max_task_queue_workers,                                   # Worker_count
+  :worker_count => 10,                                                                 # Worker_count
   :background => false,                                                                # background mode
   :work => true,                                                                       # daemon work flag
   :logger_msg_prefix => nil,                                                           # Prefix for logging
@@ -40,8 +40,8 @@ $daemon = {
 }
 
 $worker = {
-  :name => "--- - Queue Worker",                                                       # Worker name
-  :process_prefix => "---",                                                            # Prefix for process name
+  :name => "QueueDispatcher - Queue Worker",                                           # Worker name
+  :process_prefix => "qdqw",                                                           # Prefix for process name
   :work => true,                                                                       # Worker work flag
   :task_queue => nil                                                                   # Remember TaskQueue of worker, nil means idle
 }
