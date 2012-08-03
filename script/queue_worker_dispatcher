@@ -115,7 +115,6 @@ end
 
 
 def daemon_runner
-  Lock.release_all
   daemon_set_process_name "#{$daemon[:process_prefix]}_WorkerDispatcher"
   daemon_write_pid_file
   daemon_install_signal_handler
