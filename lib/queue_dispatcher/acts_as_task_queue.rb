@@ -416,7 +416,6 @@ module QueueDispatcher
       # Clean up locks after an error occured
       def cleanup_locks_after_error_for task
         release_lock_for task
-        Lock.release_for_task task
       end
 
 
