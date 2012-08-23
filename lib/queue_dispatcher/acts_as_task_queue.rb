@@ -15,6 +15,7 @@ module QueueDispatcher
       attr_reader :leave_finished_tasks_in_queue
       attr_reader :idle_wait_time
       attr_reader :poll_time
+      attr_reader :debug
 
       def initialize(args)
         @task_class_name               = (args[:task_model] || :task).to_s.underscore
@@ -23,6 +24,7 @@ module QueueDispatcher
         @leave_running_tasks_in_queue  = true if @leave_finished_tasks_in_queue
         @idle_wait_time                = args[:idle_wait_time] || 0
         @poll_time                     = args[:poll_time] || 2.seconds
+        @debug                         = args[:debug]
       end
     end
 
@@ -97,7 +99,8 @@ module QueueDispatcher
       # Get the next ready to run task out of the queue. Consider the priority and the dependent tasks, which is defined in the association defined on
       # top of this model.
       def pop args = {}
-        task                = nil
+        task      = nil
+        log_debug = acts_as_task_queue_config.debug
 
         transaction do
           # Find next pending task, where all dependent tasks are executed
@@ -108,8 +111,7 @@ module QueueDispatcher
             if t.dependent_tasks_executed?
               task = t if t.state == 'new'
             else
-              log :msg => "Task #{t.id}: Waiting for dependent tasks #{t.dependent_tasks.map{|dt| dt.id}.join ','}...",
-                  :sev => :debug
+              log :msg => "Task #{t.id}: Waiting for dependent tasks #{t.dependent_tasks.map{|dt| dt.id}.join ','}...", :sev => :debug if log_debug
             end
             i += 1
           end
