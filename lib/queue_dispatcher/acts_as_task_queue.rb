@@ -337,9 +337,6 @@ module QueueDispatcher
           reload_config task, print_log: print_log
         end
 
-        # Delete task_queue
-        task_queue.destroy_if_all_done! if task_queue
-
         # Loop has ended
         log :msg => "#{name}: TaskQueue has ended!", :print_log => print_log
         finish_state = 'stopped'
@@ -350,11 +347,14 @@ module QueueDispatcher
         puts "Fatal error in method 'run!': #{$!}\n#{backtrace}"
         task.update_state QueueDispatcher::RcAndMsg.bad_rc("Fatal error: #{$!}") if task
         cleanup_locks_after_error_for task if task
-        finish_state = 'error'
+        task.update_attribute state: 'error' if task && task.state != 'finished'
       ensure
         # Reload task and task_queue, to ensure the objects are up to date
         task_queue = TaskQueue.find_by_id task_queue.id if task_queue
         task       = Task.find_by_id task.id if task
+
+        # Delete task_queue
+        task_queue.destroy_if_all_done! if task_queue
 
         # Update states of task and task_queue
         task.update_attributes :state => 'aborted' if task && task.state == 'running'

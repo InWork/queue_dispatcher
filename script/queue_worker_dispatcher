@@ -190,6 +190,7 @@ def worker_runner
 
   # Fetch pending task queues and start working
   while $worker[:work] do
+    # Get next pending taskqueue
     $worker[:task_queue] = $daemon[:task_queue_model].get_next_pending
 
     if $worker[:task_queue]
