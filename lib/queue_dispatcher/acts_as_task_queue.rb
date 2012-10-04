@@ -347,7 +347,7 @@ module QueueDispatcher
         puts "Fatal error in method 'run!': #{$!}\n#{backtrace}"
         task.update_state QueueDispatcher::RcAndMsg.bad_rc("Fatal error: #{$!}") if task
         cleanup_locks_after_error_for task if task
-        task.update_attribute state: 'error' if task && task.state != 'finished'
+        task.update_attributes state: 'error' if task && task.state != 'finished'
       ensure
         # Reload task and task_queue, to ensure the objects are up to date
         task_queue = TaskQueue.find_by_id task_queue.id if task_queue
