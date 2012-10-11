@@ -1,4 +1,6 @@
 #events
   %table#events_table.table.table-striped
     - @tasks.each do |task|
-      = render :partial => 'queue_dispatcher_views/task_my_event', :locals => { :task => task }
+      = render :partial => 'queue_dispatcher_views/task_my_event', :locals => { task:      task,
+                                                                                show_ids:  defined?(show_ids) ? show_ids : false,
+                                                                                id_prefix: defined?(id_prefix) ? id_prefix : '' }

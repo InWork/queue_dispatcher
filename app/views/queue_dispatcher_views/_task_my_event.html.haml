@@ -16,6 +16,8 @@
     = task.perc_finished if task.running?
   %td.qd_date= task.updated_at.to_s :history
   %td.qd_prosa
+    - if show_ids
+      #{id_prefix}#{task.id}:
     = task.prosa
     - unless task.error_msg.blank?
       = image_tag 'icon_expand.gif' 
