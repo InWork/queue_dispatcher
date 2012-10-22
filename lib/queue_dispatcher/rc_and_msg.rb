@@ -25,7 +25,7 @@ module QueueDispatcher
 
 
     # Fake a good RC
-    def good_rc(output, args = {})
+    def good_rc(output = '', args = {})
       @rc = 0
       @output = output
       @error_msg = args[:error_msg]
@@ -34,7 +34,7 @@ module QueueDispatcher
 
 
     # Fake a bad RC
-    def bad_rc(error_msg, args = {})
+    def bad_rc(error_msg = '', args = {})
       @rc = 999
       @output = args[:output]
       @error_msg = error_msg
