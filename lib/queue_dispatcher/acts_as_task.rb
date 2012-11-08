@@ -80,11 +80,11 @@ module QueueDispatcher
         if rc.nil? || rc == 0
           self.update_attributes :state => "successful",
                                  :perc_finished => 100,
-                                 :message => output
+                                 :message => output.truncate(10256)
         else
           self.update_attributes :state => "error",
                                  :error_msg => error_msg,
-                                 :message => output
+                                 :message => output.truncate(10256)
         end
       end
 
