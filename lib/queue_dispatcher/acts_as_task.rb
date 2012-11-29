@@ -67,7 +67,7 @@ module QueueDispatcher
       def update_state(rc_and_msg)
         rc = output = error_msg = nil
 
-        if rc_and_msg.kind_of?(QueueDispatcher::RcAndMsg)
+        if rc_and_msg.is_a?(QueueDispatcher::RcAndMsg)
           rc = rc_and_msg.rc
           output = rc_and_msg.output
           error_msg = rc_and_msg.error_msg
@@ -76,6 +76,8 @@ module QueueDispatcher
           output = rc_and_msg[:output]
           error_msg = rc_and_msg[:error_msg]
         end
+
+        output ||= ""
 
         if rc.nil? || rc == 0
           self.update_attributes :state => "successful",
