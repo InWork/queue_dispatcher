@@ -63,8 +63,8 @@ module QueueDispatcher
       end
 
 
-      # This method updates the task state according to the return code of their corresponding command
-      def update_state(rc_and_msg)
+      # This method updates the task state according to the return code of their corresponding command and removes it from the task_queue
+      def update_state(rc_and_msg, remove_from_queue = true)
         rc = output = error_msg = nil
 
         if rc_and_msg.is_a?(QueueDispatcher::RcAndMsg)
@@ -88,6 +88,10 @@ module QueueDispatcher
                                  :error_msg => error_msg,
                                  :message => output.truncate(10256)
         end
+
+        self.update_attributes :task_queue_id => nil if remove_from_queue
+
+        rc
       end
 
 
