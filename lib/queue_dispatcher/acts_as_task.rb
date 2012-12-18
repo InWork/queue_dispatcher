@@ -115,7 +115,7 @@ module QueueDispatcher
 
       # Is the task_queue in state config_reload?
       def reloading_config?
-        acts_as_task_task_queue && acts_as_task_task_queue.reloading_config?
+        acts_as_task_task_queue && acts_as_task_task_queue.reloading_config? && acts_as_task_task_queue.tasks.where(state: 'new').first.id == id
       end
 
 
