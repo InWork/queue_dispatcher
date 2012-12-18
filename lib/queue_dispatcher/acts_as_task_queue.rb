@@ -215,6 +215,12 @@ module QueueDispatcher
       end
 
 
+      # Return true, if the task_queue is in state 'reloading_config'
+      def reloading_config?
+        pid_running? && state == 'reloading_config'
+      end
+
+
       # Kill a task_queue
       def kill
         Process.kill('HUP', pid) if pid
