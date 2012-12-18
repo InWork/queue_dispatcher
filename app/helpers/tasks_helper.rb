@@ -3,10 +3,15 @@ module TasksHelper
     icon = 'icon_warning.gif'
     alt  = 'Unknwon'
 
-    if task.pending? && ! task.reloading_config?
-      icon = 'icon_pending.gif'
-      alt  = 'Pending'
-    elsif task.init_queue? || task.reloading_config?
+    if task.pending?
+      if task.reloading_config?
+        icon = 'icon_init_queue.gif'
+        alt  = 'Reloading Config'
+      else
+        icon = 'icon_pending.gif'
+        alt  = 'Pending'
+      end
+    elsif task.init_queue?
       icon = 'icon_init_queue.gif'
       alt  = 'Initialize Queue'
     elsif task.acquire_lock?
