@@ -78,7 +78,7 @@ module QueueDispatcher
       # Find or create a task_queue by its name which is not in state 'error'. Create one, if there does not exists one
       def find_or_create_by_name name, options = {}
         transaction do
-          self.where(:name => name).where('state != "error"').first || self.create(:name => name, :state => 'new', terminate_immediately: options[:terminate_immediately])
+          self.where(:name => name).where("state != 'error'").first || self.create(:name => name, :state => 'new', terminate_immediately: options[:terminate_immediately])
         end
       end
     end

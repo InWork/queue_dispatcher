@@ -1,5 +1,5 @@
 <% @new_tasks.each do |task| %>
-jQuery('#events_table').prepend('<%=j render(partial: 'queue_dispatcher_views/task_event', locals: {task: task, show_ids:  defined?(show_ids) ? show_ids : false, id_prefix: defined?(id_prefix) ? id_prefix : '' }) %>');
+  jQuery('#events_table').prepend('<%=j render(partial: 'queue_dispatcher_views/task_event', locals: {task: task, show_ids:  defined?(show_ids) ? show_ids : false, id_prefix: defined?(id_prefix) ? id_prefix : '' }) %>');
   jQuery('#task_<%= task.id %>').effect('highlight');
 <% end %>
 
