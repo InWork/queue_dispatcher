@@ -52,6 +52,8 @@ The QueueWorkerDispatcher-script starts the workers (default are 10 workers). A 
 To start the QueueWorkerDispatcher as a daemon, use the option -b.
   -b, --background        work in background mode
 
-== Copyright
+== License
+This project is licenced under the MIT license.
 
-Copyright (c) 2011 - 2012 Philip Kurmann. See LICENSE for details.
+== Author
+Philip Kurmann (philip (at) kman.ch) 
