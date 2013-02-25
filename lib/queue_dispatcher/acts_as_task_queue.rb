@@ -81,6 +81,24 @@ module QueueDispatcher
           self.where(:name => name).where("state != 'error'").first || self.create(:name => name, :state => 'new', terminate_immediately: options[:terminate_immediately])
         end
       end
+
+
+      # Kill all running TaskQueues immediately and destroy them.
+      def reset_immediately!
+        all.each do |tq|
+          tq.update_attributes state: 'aborted'
+
+          # Kill the TaskQueue with SIGKILL
+          Process.kill 'KILL', tq.pid if tq.pid_running?
+
+          # Update task_state to aborted and release all its locks
+          tq.tasks.each do |task|
+            task.update_attributes state: 'aborted' unless task.state == 'successful' || task.state == 'finished'
+            tq.send(:release_lock_for, task)
+          end
+          tq.destroy
+        end
+      end
     end
 
 
@@ -146,6 +164,8 @@ module QueueDispatcher
           :acquire_lock
         elsif states[:error]
           :error
+        elsif states[:aborted]
+          :aborted
         elsif states[:new]
           :new
         elsif states[:successful]
@@ -386,6 +406,7 @@ module QueueDispatcher
         new = true
         pending = false
         error = false
+        aborted = false
         running = false
         acquire_lock = false
         init_queue = false
@@ -397,6 +418,7 @@ module QueueDispatcher
           new = false unless task.state == 'new' || task.state == 'new_popped' || task.state == 'build'
           pending = true if (task.state == 'new' || task.state == 'new_popped' || task.state == 'build' || task.state == 'pending')
           error = true if task.state == 'error'
+          aborted = true if task.state == 'aborted'
           init_queue = true if task.state == 'init_queue'
         end
 
@@ -406,6 +428,7 @@ module QueueDispatcher
          :new          => new,
          :pending      => pending,
          :error        => error,
+         :aborted      => aborted,
          :empty        => task_array.empty?,
          :init_queu    => init_queue}
       end

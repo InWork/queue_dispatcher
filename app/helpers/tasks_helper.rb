@@ -26,6 +26,9 @@ module TasksHelper
     elsif task.error?
       icon = 'icon_error.png'
       alt  = 'Error!'
+    elsif task.aborted?
+      icon = 'icon_aborted.png'
+      alt  = 'Aborted!'
     end
 
     image_tag(icon, :alt => alt)
