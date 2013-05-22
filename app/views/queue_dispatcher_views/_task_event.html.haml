@@ -3,7 +3,7 @@
   - event_onclick = ""
 - else
   - event_class = "event pointer"
-  - event_onclick = onclick_to_remote :url => {:controller => 'tasks', :action => 'expand_event'}, :with => "'id=#{task.id}'"
+  - event_onclick = "jQuery('#task_#{task.id}_details').toggle(300);"
 
 - if @expanded_events.include? task.id
   - event_style = ""

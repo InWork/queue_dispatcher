@@ -1,1 +1,0 @@
-page.visual_effect :toggle_blind, "task_#{@task.id}_details", :duration => 0.1
