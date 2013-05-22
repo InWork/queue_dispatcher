@@ -9,7 +9,7 @@
 <% end %>
 
 <% @deleted_task_ids.each do |id| %>
-  jQuery('#task_<%= id %>).fadeOut();
+  jQuery('#task_<%= id %>').fadeOut();
 <% end %>
 
 <%= update_flash %>
