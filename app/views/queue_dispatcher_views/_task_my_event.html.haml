@@ -3,7 +3,7 @@
   - event_onclick = ""
 - else
   - event_class = "event pointer"
-  - event_onclick = onclick_to_remote :url => {:action => 'expand_event'}, :with => "'id=#{task.id}'"
+  - event_onclick = "jQuery('#task_#{task.id}_details').toggle(300);"
 
 - if @expanded_events.include? task.id
   - event_style = ""
@@ -20,7 +20,7 @@
       #{id_prefix}#{task.id}:
     = task.prosa
     - unless task.error_msg.blank?
-      = image_tag 'icon_expand.gif' 
+      = image_tag 'icon_expand.gif'
       %div{:id => "task_#{task.id}_details", :class => 'qd_error_msg', :style => event_style}
         = task.error_msg
         %br

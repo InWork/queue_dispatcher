@@ -1,7 +1,17 @@
 - title "Tasks and Events"
-= periodically_call_remote :url => {:action => 'my_events'},
-                           :frequency => 5,
-                           :condition => 'running_task_queues'
+:javascript
+  $(document).ready(function(){
+    setInterval(update_task_list, 5000);
+  });
+
+  function update_task_list(){
+    if (running_task_queues == true) {
+      $.ajax({url: "#{url_for :action => 'my_events'}", type: "POST", dataType: "script" });
+    }
+    running_task_queues = #{TaskQueue.any_running?};
+
+  };
+
 = render :partial => 'queue_dispatcher_views/search_results_my_events'
 %br/
 = will_paginate @tasks
