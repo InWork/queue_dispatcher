@@ -20,7 +20,7 @@
       #{id_prefix}#{task.id}:
     = task.prosa
     - unless task.error_msg.blank?
-      = image_tag 'icon_expand.gif' 
+      = image_tag 'icon_expand.gif'
       %div{:id => "task_#{task.id}_details", :class => 'qd_error_msg', :style => event_style}
         = task.error_msg
         %br
