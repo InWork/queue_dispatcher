@@ -12,7 +12,7 @@ class CreateTasks < ActiveRecord::Migration
       t.text :output
       t.text :error_msg
       t.integer :task_queue_id
-  
+
       t.timestamps
     end
 
