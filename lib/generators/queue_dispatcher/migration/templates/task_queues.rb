@@ -5,6 +5,7 @@ class CreateTaskQueues < ActiveRecord::Migration
       t.string :state
       t.integer :pid
       t.boolean :terminate_immediately
+      t.string :interrupts
 
       t.timestamps
     end

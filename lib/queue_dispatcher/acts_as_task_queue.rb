@@ -14,6 +14,7 @@ module QueueDispatcher
       attr_reader :leave_running_tasks_in_queue
       attr_reader :leave_finished_tasks_in_queue
       attr_reader :idle_wait_time
+      attr_reader :task_finish_wait_time
       attr_reader :poll_time
       attr_reader :debug
 
@@ -23,6 +24,7 @@ module QueueDispatcher
         @leave_running_tasks_in_queue  = args[:leave_running_tasks_in_queue].nil? ? false : args[:leave_running_tasks_in_queue]
         @leave_running_tasks_in_queue  = true if @leave_finished_tasks_in_queue
         @idle_wait_time                = args[:idle_wait_time] || 0
+        @task_finish_wait_time         = args[:task_finish_wait_time] || 0
         @poll_time                     = args[:poll_time] || 2.seconds
         @debug                         = args[:debug]
       end
@@ -41,6 +43,7 @@ module QueueDispatcher
         @acts_as_task_queue_config = QueueDispatcher::ActsAsTaskQueue::Config.new(args)
 
         has_many acts_as_task_queue_config.task_class_name.pluralize, :order => [:priority, :id]
+        serialize :interrupts, Array
       end
     end
 
@@ -331,12 +334,18 @@ module QueueDispatcher
               cleanup_locks_after_error_for task
               task.update_attribute :task_queue_id, nil unless acts_as_task_queue_config.leave_finished_tasks_in_queue
               log :msg => "#{name}: Task #{task.id} (#{task.target.class.name}.#{task.method_name}) finished with state '#{task.state}'.", :print_log => print_log
+
+              # Wait between tasks
+              sleep acts_as_task_queue_config.task_finish_wait_time
             end
           else
             # We couldn't fetch a task out of the queue but there should still exists some. Maybe some are waiting for dependent tasks.
             # Sleep some time before trying it again.
             sleep acts_as_task_queue_config.poll_time
           end
+
+          # Interrupts
+          handle_interrupts print_log: print_log
 
           # Reload task_queue to get all updates
           task_queue = TaskQueue.find_by_id task_queue.id
@@ -470,6 +479,16 @@ module QueueDispatcher
       # Reload config
       def reload_config(last_task, args = {})
         #log :msg => "#{name}: Reloading config...", :print_log => args[:print_log]
+      end
+
+
+      # Interrupt handler
+      def handle_interrupts(args = {})
+        interrupts.each { |int| send int.to_sym }
+        update_attributes interrupts: []
+      rescue => exception
+        backtrace = exception.backtrace.join("\n  ")
+        log :msg => "Fatal error in method 'handle_interrupts': #{$!}\n  #{backtrace}", :sev => :error, :print_log => arg[:print_log]
       end
 
     end
