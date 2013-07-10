@@ -142,7 +142,7 @@ def daemon_start
       File.delete($daemon[:pid_file])
     end
   end
- 
+
   daemon_log :msg => "Starting process..."
   if $daemon[:background]
     spawn_block { daemon_runner }
@@ -227,30 +227,30 @@ def daemon_show_usage
 end
 
 
-# Parse command line options 
+# Parse command line options
 def daemon_parse_opts
   start = true
 
-  unless DAEMON_ARGV.length == 0 
+  unless DAEMON_ARGV.length == 0
     case DAEMON_ARGV[0]
       when '-b', '--background'
         $daemon[:background] = true;
-   
+
       when '-v', '--version'
         daemon_show_version
         start = false
-   
+
       when '-h', '--help'
         daemon_show_usage
         start = false
-   
+
       else
         puts "Invalid argument: #{DAEMON_ARGV[0]}" if !DAEMON_ARGV[0].nil?
         daemon_show_usage
         start = false
     end
   end
- 
+
   start
 end
 
