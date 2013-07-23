@@ -488,7 +488,7 @@ module QueueDispatcher
         update_attributes interrupts: []
       rescue => exception
         backtrace = exception.backtrace.join("\n  ")
-        log :msg => "Fatal error in method 'handle_interrupts': #{$!}\n  #{backtrace}", :sev => :error, :print_log => arg[:print_log]
+        log :msg => "Fatal error in method 'handle_interrupts': #{$!}\n  #{backtrace}", :sev => :error, :print_log => args[:print_log]
       end
 
     end
