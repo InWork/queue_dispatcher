@@ -1,5 +1,7 @@
 = QueueDispatcher for Rails3
 
+{<img src="https://codeclimate.com/github/InWork/queue_dispatcher.png" />}[https://codeclimate.com/github/InWork/queue_dispatcher]
+
 This Rails3 Gem implements a method to perform long running methods in the background.
 Background tasks will be executed by persistent workers.
 
