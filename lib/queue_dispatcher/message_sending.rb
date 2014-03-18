@@ -16,8 +16,8 @@ module QueueDispatcher
       task_queue = ::TaskQueue.find_or_create_by_name task_queue_name, terminate_immediately: terminate_immediately
 
       # Create Task
-      default_values = {priority: 100}
-      mandatory_values = {target: @target, method_name: method, args: args, state: 'new', task_queue: task_queue}
+      default_values   = {priority: 100}
+      mandatory_values = {target: @target, method_name: method, args: args, state: 'new', task_queue_id: task_queue.id}
       ::Task.create default_values.merge(@options).merge(mandatory_values)
     end
   end
