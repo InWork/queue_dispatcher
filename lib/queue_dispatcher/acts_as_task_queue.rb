@@ -32,7 +32,7 @@ module QueueDispatcher
 
 
     module ClassMethods
-      def acts_as_task_queue args = {}
+      def acts_as_task_queue(args = {})
         include Spawn
         include ActionView::Helpers::UrlHelper
         include QdLogger
@@ -79,7 +79,7 @@ module QueueDispatcher
 
 
       # Find or create a task_queue by its name which is not in state 'error'. Create one, if there does not exists one
-      def find_or_create_by_name name, options = {}
+      def find_or_create_by_name(name, options = {})
         transaction do
           self.where(:name => name).where("state != 'error'").first || self.create(:name => name, :state => 'new', terminate_immediately: options[:terminate_immediately])
         end
@@ -112,29 +112,29 @@ module QueueDispatcher
 
 
       # Put a new task into the queue
-      def push task
+      def push(task)
         acts_as_task_queue_tasks << task
       end
 
 
       # Get the next ready to run task out of the queue. Consider the priority and the dependent tasks, which is defined in the association defined on
       # top of this model.
-      def pop args = {}
+      def pop(args = {})
         task      = nil
         log_debug = acts_as_task_queue_config.debug
 
         transaction do
           # Find next pending task, where all dependent tasks are executed
           all_tasks = acts_as_task_queue_tasks.lock(true).all
-          i         = 0
-          while task.nil? && i < all_tasks.count do
-            t = all_tasks[i]
+          pos       = 0
+          while task.nil? && pos < all_tasks.count do
+            t = all_tasks[pos]
             if t.dependent_tasks_executed?
               task = t if t.state == 'new'
             else
               log :msg => "Task #{t.id}: Waiting for dependent tasks #{t.dependent_tasks.map{|dt| dt.id}.join ','}...", :sev => :debug if log_debug
             end
-            i += 1
+            pos += 1
           end
 
           # Remove task from current queue
@@ -268,7 +268,7 @@ module QueueDispatcher
 
 
       # Execute all tasks in the queue
-      def run! args = {}
+      def run!(args = {})
         task          = nil
         @logger       = args[:logger] || Logger.new("#{File.expand_path(Rails.root)}/log/task_queue.log")
         finish_state  = 'aborted'
@@ -278,7 +278,7 @@ module QueueDispatcher
         task_queue.update_attribute :state, 'running'
 
         # Set logger in engine
-        @engine.logger = @logger if defined? @engine
+        @engine.logger = @logger if defined? @engine && @engine.methods.include?(:logger=)
         log :msg => "#{name}: Starting TaskQueue #{task_queue.id}...", :print_log => print_log
 
         # Init. Pop first task from queue, to show init_queue-state
@@ -311,26 +311,26 @@ module QueueDispatcher
               # Execute the method defined in task.method
               if task.target.methods.include?(task.method_name) || task.target.methods.include?(task.method_name.to_sym)
                 if task.dependent_tasks_had_errors
-                  error_msg = "Dependent tasks had errors!"
+                  error_msg = 'Dependent tasks had errors!'
                   log :msg => error_msg,
                       :sev => :warn, 
                       :print_log => print_log
-                  rc_and_msg = QueueDispatcher::RcAndMsg.bad_rc error_msg
+                  result = QueueDispatcher::RcAndMsg.bad_rc error_msg
                 else
                   target = task.target
                   target.logger = @logger if target.methods.include?(:logger=) || target.methods.include?('logger=')
-                  rc_and_msg = task.execute!
+                  result = task.execute!
                 end
               else
                 error_msg = "unknown method '#{task.method_name}' for #{task.target.class.name}!"
                 log :msg => error_msg,
                     :sev => :warn,
                     :print_log => print_log
-                rc_and_msg = QueueDispatcher::RcAndMsg.bad_rc error_msg
+                result = QueueDispatcher::RcAndMsg.bad_rc error_msg
               end
 
               # Change task state according to the return code and remove it from the queue
-              task.update_state rc_and_msg
+              task.update_state result
               cleanup_locks_after_error_for task
               task.update_attribute :task_queue_id, nil unless acts_as_task_queue_config.leave_finished_tasks_in_queue
               log :msg => "#{name}: Task #{task.id} (#{task.target.class.name}.#{task.method_name}) finished with state '#{task.state}'.", :print_log => print_log
@@ -410,7 +410,7 @@ module QueueDispatcher
       end
 
 
-      def determine_state_of_task_array task_array
+      def determine_state_of_task_array(task_array)
         successful = true
         new = true
         pending = false
@@ -444,17 +444,17 @@ module QueueDispatcher
 
 
       # Get Lock
-      def get_lock_for task
+      def get_lock_for(task)
       end
 
 
       # Release Lock
-      def release_lock_for task
+      def release_lock_for(task)
       end
 
 
       # Clean up locks after an error occured
-      def cleanup_locks_after_error_for task
+      def cleanup_locks_after_error_for(task)
         release_lock_for task
       end
 

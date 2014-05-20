@@ -15,7 +15,7 @@ module QueueDispatcher
 
 
     module ClassMethods
-      def acts_as_task args = {}
+      def acts_as_task(args = {})
         # Include number-helper for number_to_human_size method
         include ActionView::Helpers::NumberHelper
 
@@ -32,6 +32,7 @@ module QueueDispatcher
         validates_presence_of :target, :method_name, :state
         serialize             :target
         serialize             :args
+        serialize             :result
 
         # Add dynamic associations to task_dependency and task_property according to the class name
         TaskDependency.instance_eval %Q{
@@ -64,29 +65,33 @@ module QueueDispatcher
 
 
       # This method updates the task state according to the return code of their corresponding command and removes it from the task_queue
-      def update_state(rc_and_msg, remove_from_queue = false)
+      def update_state(result, remove_from_queue = false)
         rc = output = error_msg = nil
 
-        if rc_and_msg.is_a?(QueueDispatcher::RcAndMsg)
-          rc = rc_and_msg.rc
-          output = rc_and_msg.output
-          error_msg = rc_and_msg.error_msg
-        elsif rc_and_msg.kind_of?(Hash)
-          rc = rc_and_msg[:rc]
-          output = rc_and_msg[:output]
-          error_msg = rc_and_msg[:error_msg]
+        if result.methods.include?(:rc) && result.methods.include?(:output) && result.methods.include?(:error_msg)
+          rc        = result.rc
+          output    = result.output
+          error_msg = result.error_msg
+          result    = nil
+        elsif result.kind_of?(Hash)
+          rc        = result[:rc]
+          output    = result[:output]
+          error_msg = result[:error_msg]
+          result    = nil
         end
 
-        output ||= ""
+        output ||= ''
 
         if rc.nil? || rc == 0
-          self.update_attributes :state => "successful",
+          self.update_attributes :state         => 'successful',
                                  :perc_finished => 100,
-                                 :message => output.truncate(10256)
+                                 :message       => output.truncate(10256),
+                                 :result        => result
         else
-          self.update_attributes :state => "error",
+          self.update_attributes :state     => 'error',
                                  :error_msg => error_msg,
-                                 :message => output.truncate(10256)
+                                 :message   => output.truncate(10256),
+                                 :result    => result
         end
 
         self.update_attributes :task_queue_id => nil if remove_from_queue
@@ -96,7 +101,7 @@ module QueueDispatcher
 
 
       # Update the attributes perc_finished and message according to the args
-      def update_message args = {}
+      def update_message(args = {})
         msg = args[:msg]
         perc_finished = args[:perc_finished]
 
@@ -190,7 +195,7 @@ module QueueDispatcher
 
       # Calculate md5-Checksum
       def md5
-        attr_str = ""
+        attr_str = ''
         Task.attribute_names.each{ |a| attr_str += self.send(a).to_s }
         Digest('MD5').digest(attr_str)
       end
