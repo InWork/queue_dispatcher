@@ -1,4 +1,4 @@
-class AddInterruptsToTaskQueues < ActiveRecord::Migration
+class AddInterruptsToTasksQueues < ActiveRecord::Migration
   def up
     add_column "<%= options[:task_queues_table_name] %>", :interrupts, :text
   end
