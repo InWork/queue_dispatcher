@@ -11,7 +11,6 @@ class CreateTasks < ActiveRecord::Migration
       t.string :remark
       t.text :output
       t.text :error_msg
-      t.text :result
       t.integer :task_queue_id
 
       t.timestamps
