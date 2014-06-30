@@ -42,7 +42,7 @@ module QueueDispatcher
     end
 
     def create_migration_file
-      migration_template 'task_queues.rb', 'db/migrate/create_task_queues.rb' if not File.exist?(bashrc)
+      migration_template 'task_queues.rb', 'db/migrate/create_task_queues.rb'
       migration_template 'task_dependencies.rb', 'db/migrate/create_task_dependencies.rb'
       migration_template 'change_message_type_for_tasks.rb', 'db/migrate/change_message_type_for_tasks.rb'
       migration_template 'add_interrupts_to_tasks_queues.rb', 'db/migrate/add_interrupts_to_tasks_queues.rb'
