@@ -88,7 +88,7 @@ module Psych
           payload = Hash[*object.children.map { |c| accept c }]
           id = payload["attributes"][klass.primary_key]
           begin
-            if ActiveRecord::VERSION::MAJOR == 3
+            if ActiveRecord::VERSION::MAJOR >= 3
               klass.unscoped.find(id)
             else # Rails 2
               klass.with_exclusive_scope { klass.find(id) }

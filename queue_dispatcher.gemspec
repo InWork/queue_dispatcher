@@ -12,12 +12,12 @@ Gem::Specification.new do |s|
   s.summary     = %q{This Gem installs a queue dispatcher for handling asynchronous tasks}
   s.description = %q{Queue_Dispatcher executes asynchronous tasks in the background.}
 
-  s.add_dependency "sys-proctable", '>= 0.9.1'
-  s.add_dependency "deadlock_retry"
-  s.add_dependency "spawn", '>= 1.0.0'
-  s.add_dependency "haml"
-  s.add_dependency "will_paginate"
-  s.add_dependency "jquery-rails"
+  s.add_dependency 'sys-proctable', '>= 0.9.1'
+  s.add_dependency 'deadlock_retry'
+  s.add_dependency 'spawnling'
+  s.add_dependency 'haml'
+  s.add_dependency 'will_paginate'
+  s.add_dependency 'jquery-rails'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")

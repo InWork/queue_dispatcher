@@ -1,7 +1,5 @@
-require 'active_support/basic_object'
-
 module QueueDispatcher
-  class QueueDispatcherProxy < ActiveSupport::BasicObject
+  class QueueDispatcherProxy < ActiveSupport::ProxyObject
     def initialize(target, options = {})
       @target = target
       @options = options

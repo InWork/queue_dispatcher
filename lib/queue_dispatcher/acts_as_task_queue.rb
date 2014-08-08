@@ -1,6 +1,5 @@
 require 'sys/proctable'
 require 'queue_dispatcher/rc_and_msg'
-require 'spawn'
 
 module QueueDispatcher
   module ActsAsTaskQueue
@@ -33,7 +32,6 @@ module QueueDispatcher
 
     module ClassMethods
       def acts_as_task_queue(args = {})
-        include Spawn
         include ActionView::Helpers::UrlHelper
         include QdLogger
 
@@ -42,7 +40,7 @@ module QueueDispatcher
 
         @acts_as_task_queue_config = QueueDispatcher::ActsAsTaskQueue::Config.new(args)
 
-        has_many acts_as_task_queue_config.task_class_name.pluralize, :order => [:priority, :id]
+        has_many acts_as_task_queue_config.task_class_name.pluralize.to_sym, -> { order(:priority, :id) }
         serialize :interrupts, Array
       end
     end
@@ -127,7 +125,7 @@ module QueueDispatcher
           # Find next pending task, where all dependent tasks are executed
           all_tasks = acts_as_task_queue_tasks.lock(true).all
           pos       = 0
-          while task.nil? && pos < all_tasks.count do
+          while task.nil? && pos < all_tasks.to_a.count do
             t = all_tasks[pos]
             if t.dependent_tasks_executed?
               task = t if t.state == 'new'

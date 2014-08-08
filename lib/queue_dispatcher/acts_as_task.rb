@@ -24,7 +24,7 @@ module QueueDispatcher
 
         @acts_as_task_config = QueueDispatcher::ActsAsTask::Config.new(args[:task_queue_model] || :task_queue)
 
-        belongs_to            acts_as_task_config.task_queue_class_name
+        belongs_to            acts_as_task_config.task_queue_class_name.to_sym
         has_many              :task_dependencies, :dependent => :destroy, :foreign_key => :task_id
         has_many              :dependent_tasks, :through => :task_dependencies
         has_many              :inverse_task_dependencies, :class_name => 'TaskDependency', :foreign_key => 'dependent_task_id', :dependent => :destroy
