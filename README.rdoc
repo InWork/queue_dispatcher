@@ -23,6 +23,13 @@ Use
 
 This will create a database migration for the models Task and TaskQueues.
 
+If you update the queue_dispatcher from pre 1.5.1 you have to use the following command to update your migrations:
+
+Use
+  rails g queue_dispatcher:migration --skip
+
+This will create all new database migrations for the models Task and TaskQueues and leve the existing as they are.
+
 === Gem Dependencies
 
 Please check if all those requirements are satisfied on your environment.
