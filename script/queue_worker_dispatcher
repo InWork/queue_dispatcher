@@ -106,8 +106,10 @@ end
 # Install signal handler for worker
 def worker_install_signal_handler
   install_signal_handler(['TERM'], :trap_msg => "Caught trap signal. Shutdown...", :ignore_signals => ['HUP', 'INT']) do
-    # Shutdown task_queue
-    $worker[:task_queue].update_attributes :state => 'shutdown' if $worker[:task_queue]
+    # Shutdown task_queue. Because of Ruby 2.0, we have to do this in a Thread to prevent "can't be called from trap context"-errors!
+    Thread.new do
+      $worker[:task_queue].update_attributes state: 'shutdown' if $worker[:task_queue]
+    end
     $worker[:work] = false
   end
 end

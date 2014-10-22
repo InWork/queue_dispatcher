@@ -483,7 +483,7 @@ module QueueDispatcher
       # Interrupt handler
       def handle_interrupts(args = {})
         interrupts.each { |int| send int.to_sym }
-        update_attributes interrupts: []
+        update_attributes :interrupts => []
       rescue => exception
         backtrace = exception.backtrace.join("\n  ")
         log :msg => "Fatal error in method 'handle_interrupts': #{$!}\n  #{backtrace}", :sev => :error, :print_log => args[:print_log]
