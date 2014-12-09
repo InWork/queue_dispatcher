@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency "sys-proctable", '>= 0.9.1'
   s.add_dependency "deadlock_retry"
-  s.add_dependency "spawn", '>= 1.0.0'
+  s.add_dependency "spawnling"
   s.add_dependency "haml"
   s.add_dependency "will_paginate"
   s.add_dependency "jquery-rails"
