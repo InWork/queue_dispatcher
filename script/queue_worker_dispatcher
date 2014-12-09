@@ -1,16 +1,15 @@
 #!/usr/bin/env ruby
 # BEGIN - rails runner… with a relative path
-DAEMON_ARGV = ARGV.clone
-ARGV.clear
-ARGV << 'runner'
-ARGV << '/dev/null'
-$: << File.dirname(__FILE__)
-load 'rails'
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+# set Rails.env here if desired
+Rails.application.require_environment!
 # END - rails runner… with a relative path
 
 require 'sys/proctable'
+require 'spawnling'
 include Sys
-include Spawn
 include IwLogger
 
 
@@ -135,7 +134,7 @@ def daemon_start
     ps = Sys::ProcTable.ps(old_pid)
 
     # Asume, that if the command of the 'ps'-output is 'ruby', the process is still running
-    if ps && (ps.comm == 'ruby')
+    if ps && (ps.comm == 'ruby' || ps.comm == 'queue_worker_di')
       daemon_log :msg => "Process already running!", :sev => :error
       exit
     else
@@ -145,7 +144,7 @@ def daemon_start
 
   daemon_log :msg => "Starting process..."
   if $daemon[:background]
-    spawn_block { daemon_runner }
+    Spawnling.new { daemon_runner }
   else
     daemon_runner
   end
@@ -159,7 +158,7 @@ def spawn_and_monitor_workers
   while $daemon[:work]
     # (Re)start workers
     while $daemon[:worker_pids].count < $daemon[:worker_count] do
-      sp = spawn_block(:argv => $worker[:process_prefix]) do
+      sp = Spawnling.new(:argv => $worker[:process_prefix]) do
         worker_runner
       end
       $daemon[:worker_pids] << sp.handle
@@ -175,7 +174,7 @@ def spawn_and_monitor_workers
         ps = nil
         daemon_log :msg => "Error in ProcTable.ps: #{$!}", :sev => :error
       end
-      $daemon[:worker_pids].delete ch_pid unless ps && ps.comm == 'ruby'
+      $daemon[:worker_pids].delete ch_pid unless ps && ps.comm == 'ruby' || ps.comm == 'queue_worker_di'
     end
   end
 end
@@ -231,8 +230,8 @@ end
 def daemon_parse_opts
   start = true
 
-  unless DAEMON_ARGV.length == 0
-    case DAEMON_ARGV[0]
+  unless ARGV.length == 0
+    case ARGV[0]
       when '-b', '--background'
         $daemon[:background] = true;
 
@@ -245,7 +244,7 @@ def daemon_parse_opts
         start = false
 
       else
-        puts "Invalid argument: #{DAEMON_ARGV[0]}" if !DAEMON_ARGV[0].nil?
+        puts "Invalid argument: #{ARGV[0]}" if !ARGV[0].nil?
         daemon_show_usage
         start = false
     end
