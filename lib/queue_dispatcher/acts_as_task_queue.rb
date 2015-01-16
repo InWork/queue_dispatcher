@@ -303,11 +303,11 @@ module QueueDispatcher
               # Start
               task.update_attributes :state => 'acquire_lock', :perc_finished => 0
               get_lock_for task
-              log :msg => "#{name}: Starting task #{task.id} (#{task.target.class.name}.#{task.method_name})...", :print_log => print_log
+              log :msg => "#{name}: Starting task #{task.id} (#{task.payload.class.name}.#{task.method_name})...", :print_log => print_log
               task.update_attributes :state => 'running'
 
               # Execute the method defined in task.method
-              if task.target.methods.include?(task.method_name) || task.target.methods.include?(task.method_name.to_sym)
+              if task.payload.methods.map(&:to_sym).include?(task.method_name.to_sym)
                 if task.dependent_tasks_had_errors
                   error_msg = 'Dependent tasks had errors!'
                   log :msg => error_msg,
@@ -315,12 +315,12 @@ module QueueDispatcher
                       :print_log => print_log
                   result = QueueDispatcher::RcAndMsg.bad_rc error_msg
                 else
-                  target = task.target
-                  target.logger = @logger if target.methods.include?(:logger=) || target.methods.include?('logger=')
+                  payload = task.payload
+                  payload.logger = @logger if payload.methods.include?(:logger=) || payload.methods.include?('logger=')
                   result = task.execute!
                 end
               else
-                error_msg = "unknown method '#{task.method_name}' for #{task.target.class.name}!"
+                error_msg = "unknown method '#{task.method_name}' for #{task.payload.class.name}!"
                 log :msg => error_msg,
                     :sev => :warn,
                     :print_log => print_log
@@ -331,7 +331,7 @@ module QueueDispatcher
               task.update_state result
               cleanup_locks_after_error_for task
               task.update_attribute :task_queue_id, nil unless acts_as_task_queue_config.leave_finished_tasks_in_queue
-              log :msg => "#{name}: Task #{task.id} (#{task.target.class.name}.#{task.method_name}) finished with state '#{task.state}'.", :print_log => print_log
+              log :msg => "#{name}: Task #{task.id} (#{task.payload.class.name}.#{task.method_name}) finished with state '#{task.state}'.", :print_log => print_log
 
               # Wait between tasks
               sleep acts_as_task_queue_config.task_finish_wait_time

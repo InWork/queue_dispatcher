@@ -56,6 +56,15 @@ module QueueDispatcher
       end
 
 
+      def payload
+        if target.is_a?(QueueDispatcher::TargetContainer)
+          target.payload
+        else
+          target
+        end
+      end
+
+
       # Add task_id to the args
       def args
         a = super
@@ -68,7 +77,7 @@ module QueueDispatcher
       def update_state(result, remove_from_queue = false)
         rc = output = error_msg = nil
 
-        if result.methods.include?(:rc) && result.methods.include?(:output) && result.methods.include?(:error_msg)
+        if result.methods.map(&:to_sym).include?(:rc) && result.methods.map(&:to_sym).include?(:output) && result.methods.map(&:to_sym).include?(:error_msg)
           rc        = result.rc
           output    = result.output
           error_msg = result.error_msg
@@ -203,7 +212,7 @@ module QueueDispatcher
 
       # Execute task
       def execute!
-        target.send(method_name, *args)
+        payload.send(method_name, *args)
       end
 
     end
