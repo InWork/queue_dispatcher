@@ -212,6 +212,7 @@ module QueueDispatcher
 
       # Execute task
       def execute!
+        payload.task_id = id if payload.methods.include?(:task_id=)
         payload.send(method_name, *args)
       end
 
