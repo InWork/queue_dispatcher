@@ -35,7 +35,8 @@ $daemon = {
   :background => false,                                                                # background mode
   :work => true,                                                                       # daemon work flag
   :logger_msg_prefix => nil,                                                           # Prefix for logging
-  :worker_pids => []                                                                   # Remember PIDs
+  :worker_pids => [],                                                                  # Remember PIDs
+  :heartbeat_task_queue_id => nil                                                      # Remember ID of the Heartbeat-TaskQueue
 }
 
 $worker = {
@@ -74,6 +75,7 @@ end
 
 # Clean up before a daemon terminates
 def daemon_clean_up
+  TaskQueue.where(id: $daemon[:heartbeat_task_queue_id]).destroy_all
   File.delete($daemon[:pid_file])
 end
 
@@ -137,18 +139,31 @@ def daemon_start
 
     # Asume, that if the command of the 'ps'-output is 'ruby', the process is still running
     if ps && (ps.comm == 'ruby')
-      daemon_log :msg => "Process already running!", :sev => :error
+      daemon_log :msg => 'Process already running!', :sev => :error
       exit
     else
       File.delete($daemon[:pid_file])
     end
   end
 
-  daemon_log :msg => "Starting process..."
+  # Start daemon
+  daemon_log :msg => 'Starting process...'
   if $daemon[:background]
     Spawnling.new { daemon_runner }
   else
     daemon_runner
+  end
+end
+
+
+# update heartbeat
+def daemon_update_heartbeat
+  hb_tq = TaskQueue.find_by(id: $daemon[:heartbeat_task_queue_id])
+  if hb_tq
+    hb_tq.touch
+  else
+    hb_tq = TaskQueue.create(name: 'QD_HeartBeat', state: 'heartbeat', pid: Process.pid)
+    $daemon[:heartbeat_task_queue_id] = hb_tq.id
   end
 end
 
@@ -158,6 +173,8 @@ def spawn_and_monitor_workers
   daemon_log :msg => "Spawning #{$daemon[:worker_count]} workers..."
 
   while $daemon[:work]
+    daemon_update_heartbeat
+
     # (Re)start workers
     while $daemon[:worker_pids].count < $daemon[:worker_count] do
       sp = Spawnling.new(:argv => $worker[:process_prefix]) do

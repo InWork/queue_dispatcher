@@ -52,6 +52,27 @@ module QueueDispatcher
       end
 
 
+      # Check if a certain PID is still running and is a ruby process
+      def pid_running?(pid)
+        ps = pid ? Sys::ProcTable.ps(pid) : nil
+        if ps
+          # Asume, that if the command of the 'ps'-output is 'ruby', the process is still running
+          ps.comm == 'ruby'
+        else
+          false
+        end
+      end
+
+
+      # Check if QueueDispatcher is running.
+      def qd_running?
+        hb_tqs = TaskQueue.where(state: 'heartbeat')
+        running = false
+        hb_tqs.each { |tq| running = true if pid_running?(tq.pid) && tq.updated_at > 1.minute.ago }
+        running
+      end
+
+
       # Are there any running task_queues?
       def any_running?
         running = false
@@ -66,7 +87,7 @@ module QueueDispatcher
 
         transaction do
           # Find next task_queue which is not running and not in state error
-          order(:id).lock(true).all.each { |tq| task_queue = tq unless task_queue || tq.pid_running? || tq.state == 'error' }
+          order(:id).lock(true).all.each { |tq| task_queue = tq unless task_queue || tq.pid_running? || tq.state == 'error' || tq.state == 'heartbeat' }
 
           # Update pid inside the atomic transaction to be sure, the next call of this method will not give the same queue a second time
           task_queue.update_attribute :pid, $$ if task_queue
@@ -179,13 +200,7 @@ module QueueDispatcher
 
       # Return true, if the command of the process with pid 'self.pid' is 'ruby'
       def pid_running?
-        ps = self.pid ? Sys::ProcTable.ps(self.pid) : nil
-        if ps
-          # Asume, that if the command of the 'ps'-output is 'ruby', the process is still running
-          ps.comm == 'ruby'
-        else
-          false
-        end
+        self.class.pid_running?(self.pid)
       end
 
 
