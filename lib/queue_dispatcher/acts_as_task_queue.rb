@@ -66,9 +66,8 @@ module QueueDispatcher
 
       # Check if QueueDispatcher is running.
       def qd_running?
-        hb_tqs = TaskQueue.where(state: 'heartbeat')
         running = false
-        hb_tqs.each { |tq| running = true if pid_running?(tq.pid) && tq.updated_at > 1.minute.ago }
+        TaskQueue.where(state: 'heartbeat').each { |tq| running = true if tq.updated_at > 1.minute.ago }
         running
       end
 
