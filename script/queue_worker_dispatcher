@@ -214,7 +214,7 @@ def worker_runner
     if $worker[:task_queue]
       # Set Process Name and execute tasks
       $0 = "#{$worker[:process_prefix]}_#{$worker[:task_queue].id}"
-      $worker[:task_queue].run!(:print_log => ! $daemon[:background])
+      $worker[:task_queue].run!(:print_log => ! $daemon[:background], logger: @logger)
     else
       # Set Process Name and sleep
       $0 = "#{$worker[:process_prefix]}_idle"
