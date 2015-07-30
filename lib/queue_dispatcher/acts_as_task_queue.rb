@@ -342,7 +342,7 @@ module QueueDispatcher
               end
 
               # Change task state according to the return code and remove it from the queue
-              task.update_state result
+              task.update_state_and_exec_callbacks result
               cleanup_locks_after_error_for task
               task.update_attribute :task_queue_id, nil unless acts_as_task_queue_config.leave_finished_tasks_in_queue
               log :msg => "#{name}: Task #{task.id} (#{task.payload.class.name}.#{task.method_name}) finished with state '#{task.state}'.", :print_log => print_log
@@ -392,7 +392,7 @@ module QueueDispatcher
         backtrace = exception.backtrace.join("\n  ")
         log :msg => "Fatal error in method 'run!': #{$!}\n  #{backtrace}", :sev => :error, :print_log => print_log
         puts "Fatal error in method 'run!': #{$!}\n#{backtrace}"
-        task.update_state QueueDispatcher::RcAndMsg.bad_rc("Fatal error: #{$!}") if task
+        task.update_state_and_exec_callbacks QueueDispatcher::RcAndMsg.bad_rc("Fatal error: #{$!}") if task
         cleanup_locks_after_error_for task if task
         task.update_attributes state: 'error' if task && task.state != 'finished'
       ensure

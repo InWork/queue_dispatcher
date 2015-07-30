@@ -74,7 +74,7 @@ module QueueDispatcher
 
 
       # This method updates the task state according to the return code of their corresponding command and removes it from the task_queue
-      def update_state(result, remove_from_queue = false)
+      def update_state_and_exec_callbacks(result, remove_from_queue = false)
         rc = output = error_msg = nil
 
         if result.methods.map(&:to_sym).include?(:rc) && result.methods.map(&:to_sym).include?(:output) && result.methods.map(&:to_sym).include?(:error_msg)
@@ -90,20 +90,30 @@ module QueueDispatcher
         end
 
         output ||= ''
+        successful = result.methods.map(&:to_sym).include?(:successful?) ? result.successful? : rc.nil? || rc == 0
 
-        if rc.nil? || rc == 0
+        if successful
           self.update_attributes :state         => 'successful',
                                  :perc_finished => 100,
                                  :message       => output.truncate(10256),
                                  :result        => result
+          begin
+            on_success
+          rescue
+          end
         else
           self.update_attributes :state     => 'error',
                                  :error_msg => error_msg,
                                  :message   => output.truncate(10256),
                                  :result    => result
+          begin
+            on_error
+          rescue
+          end
         end
 
         self.update_attributes :task_queue_id => nil if remove_from_queue
+
 
         rc
       end
@@ -214,6 +224,16 @@ module QueueDispatcher
       def execute!
         payload.task_id = id if payload.methods.include?(:task_id=)
         payload.send(method_name, *args)
+      end
+
+
+      # Success-Callback Skeleton
+      def on_success
+      end
+
+
+      # Error-Callback Skeleton
+      def on_error
       end
 
     end
