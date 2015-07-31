@@ -60,7 +60,7 @@ module QueueDispatcher
 
       [:success, :error].each do |state|
         define_method("#{state}_callback_chain") do
-          eval "@#{state}_callback_chain"
+          eval("@#{state}_callback_chain") || []
         end
       end
     end
