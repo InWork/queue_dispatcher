@@ -43,7 +43,7 @@ module QueueDispatcher
 
 
       [:success, :error].each do |state|
-        define_method("after_#{state}") do |*method_names|
+        define_method("on_#{state}") do |*method_names|
           method_names.each do |method_name|
             eval "(@#{state}_callback_chain ||= []) << method_name"
           end
