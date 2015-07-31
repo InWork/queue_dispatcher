@@ -40,12 +40,28 @@ module QueueDispatcher
           belongs_to :dependent_task, :class_name => '#{self.name}'
         }
       end
+
+
+      [:success, :error].each do |state|
+        define_method("after_#{state}") do |*method_names|
+          method_names.each do |method_name|
+            eval "(@#{state}_callback_chain ||= []) << method_name"
+          end
+        end
+      end
     end
 
 
     module SingletonMethods
       def acts_as_task_config
         @acts_as_task_config
+      end
+
+
+      [:success, :error].each do |state|
+        define_method("#{state}_callback_chain") do
+          eval "@#{state}_callback_chain"
+        end
       end
     end
 
@@ -97,19 +113,13 @@ module QueueDispatcher
                                  :perc_finished => 100,
                                  :message       => output.truncate(10256),
                                  :result        => result
-          begin
-            on_success
-          rescue
-          end
+          success_callbacks
         else
           self.update_attributes :state     => 'error',
                                  :error_msg => error_msg,
                                  :message   => output.truncate(10256),
                                  :result    => result
-          begin
-            on_error
-          rescue
-          end
+          error_callbacks
         end
 
         self.update_attributes :task_queue_id => nil if remove_from_queue
@@ -226,14 +236,21 @@ module QueueDispatcher
         payload.send(method_name, *args)
       end
 
+    private
 
-      # Success-Callback Skeleton
-      def on_success
-      end
-
-
-      # Error-Callback Skeleton
-      def on_error
+      # Callbacks
+      [:success, :error].each do |state|
+        define_method("#{state}_callbacks") do |logger|
+          eval("self.class.#{state}_callback_chain").each do |method_name|
+            begin
+              send method_name
+            rescue => exception
+              backtrace = exception.backtrace.join("\n  ")
+              msg = "Fatal error in method '#{method_name}', while executing it in #{state}_callbacks: #{$!}\n  #{backtrace}"
+              logger.send(:error, msg) if logger
+            end
+          end
+        end
       end
 
     end
