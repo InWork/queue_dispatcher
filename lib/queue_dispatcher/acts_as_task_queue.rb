@@ -290,7 +290,7 @@ module QueueDispatcher
         task_queue.update_attribute :state, 'running'
 
         # Set logger in engine
-        @engine.logger = @logger if defined? @engine && @engine.methods.include?(:logger=)
+        @engine.logger = @logger if defined?(@engine) && @engine.methods.include?(:logger=)
         log :msg => "#{name}: Starting TaskQueue #{task_queue.id}...", :print_log => print_log
 
         # Init. Pop first task from queue, to show init_queue-state
