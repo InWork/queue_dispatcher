@@ -106,7 +106,7 @@ module QueueDispatcher
 
       # Kill all running TaskQueues immediately and destroy them.
       def reset_immediately!
-        all.each do |tq|
+        self.where('state != ?', 'heartbeat').each do |tq|
           tq.update_attributes state: 'aborted'
 
           # Kill the TaskQueue with SIGKILL
